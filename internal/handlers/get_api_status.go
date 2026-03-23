@@ -9,7 +9,9 @@ import (
 )
 
 func GetApiStatusHandler(c *gin.Context) {
-	// Tenta um ping no banco para garantir que a conexão com o Supabase está ativa
+
+	// Try a ping in the supabase connection
+
 	err := database.Pool.Ping(context.Background())
 
 	dbStatus := "online"

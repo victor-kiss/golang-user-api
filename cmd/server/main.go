@@ -9,25 +9,30 @@ import (
 )
 
 func main() {
-
-	// 1. Inicializa a conexão com o Supabase (PGX)
+	// 1. Inicializa a conexão com o banco
 	database.InitDB()
-
 	defer database.Pool.Close()
 
 	router := gin.Default()
 
-	api := router.Group("/api/v1")
+	// 3. Definição das Rotas
+	v1 := router.Group("/api/v1")
 	{
-		// Agora as URLs serão /api/status e /api/users
-		api.GET("/status", handlers.GetApiStatusHandler)
-		api.POST("/create_user", handlers.CreateUserHandler)
+		v1.GET("/status", handlers.GetApiStatusHandler)
+
+		// Rotas de Usuário agrupadas
+		users := v1.Group("/users")
+		{
+			users.GET("", handlers.CreateUserHandler)     // Listar todos
+			users.GET("/:uuid", handlers.GetUsersHandler) // Buscar um
+			users.POST("", handlers.CreateUserHandler)    // Criar
+			//users.PUT("/:uuid", handlers.)    // Atualizar (Dynamic/Squirrel)
+			users.DELETE("/:uuid", handlers.DeleteUser) // Soft Delete
+		}
 	}
 
-	port := ":8000"
-
-	if err := router.Run(port); err != nil {
-		log.Fatalf("server error %v", err)
+	log.Printf("Server running on http://localhost:8000")
+	if err := router.Run(":8000"); err != nil {
+		log.Fatalf("Server error: %v", err)
 	}
-
 }

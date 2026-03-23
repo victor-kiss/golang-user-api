@@ -1,67 +1,76 @@
-
-
 # Go User Management API (Em Desenvolvimento 🚧)
 
-Este projeto consiste em uma API REST de gerenciamento de usuários desenvolvida em **Go**, focada em alta performance e escalabilidade. Atualmente, o projeto utiliza a infraestrutura do **Supabase** (PostgreSQL) e segue uma arquitetura desacoplada em camadas.
+Este projeto é uma API REST de gerenciamento de usuários desenvolvida em **Go**, focada em alta performance, segurança e escalabilidade. A aplicação utiliza a infraestrutura do **Supabase** (PostgreSQL) e segue as melhores práticas de arquitetura da comunidade Go.
 
-## 🚀 Tecnologias em Uso
+## 🚀 Stack Tecnológica
 
 * **Linguagem:** Go (Golang) 1.26+
 * **Web Framework:** [Gin Gonic](https://github.com/gin-gonic/gin)
-* **Database Driver:** [pgx/v5](https://github.com/jackc/pgx) (Gerenciamento de Pool de conexões)
-* **Banco de Dados:** PostgreSQL (Supabase)
-* **Configuração:** Godotenv para variáveis de ambiente
+* **Query Builder:** [Squirrel](https://github.com/Masterminds/squirrel) (Geração de SQL fluente e seguro)
+* **Database Driver:** [pgx/v5](https://github.com/jackc/pgx) (Gerenciamento de Pool de conexões de alta performance)
+* **Banco de Dados:** PostgreSQL (Hospedado no Supabase)
+* **Configuração:** Godotenv para gerenciamento de variáveis de ambiente
 
-## 🛠️ Desafios Técnicos e Arquitetura
+## 🛠️ Arquitetura e Decisões Técnicas
 
-O projeto está sendo estruturado sob o padrão **Repository Pattern**, o que garante a separação entre a lógica de roteamento (Handlers) e a persistência de dados.
+O projeto utiliza o **Standard Go Project Layout**, garantindo que a lógica de negócio esteja protegida dentro da pasta `internal/`, seguindo princípios de encapsulamento.
 
-### Transição de GORM para PGX
-Uma das principais decisões arquiteturais deste projeto é a utilização do **`pgx/v5`** em vez de um ORM tradicional como o GORM. 
-
-**Por que estou utilizando PGX?**
-1.  **Performance:** Menor overhead de memória e execução de queries mais rápidas.
-2.  **Controle de SQL:** Implementação direta de comandos SQL (como a cláusula `RETURNING`) para garantir integridade dos dados retornados pelo banco.
-3.  **Resiliência:** Configuração manual do `pgxpool` para lidar com a latência e conexões persistentes com o Supabase.
+### PGX & Squirrel vs ORMs Tradicionais
+Optei por não utilizar um ORM (como GORM) para ter controle total sobre a performance e o comportamento do banco de dados:
+1.  **Performance:** Menor overhead de memória e execução direta de queries sem camadas de abstração desnecessárias.
+2.  **SQL Dinâmico:** O Squirrel permite construir updates parciais de forma segura e legível, facilitando a manutenção.
+3.  **Cláusula RETURNING:** Uso nativo do PostgreSQL para retornar IDs, UUIDs e Timestamps no momento da inserção, garantindo sincronia entre Go e o Banco.
 
 ### Estratégia de Identificação Híbrida
-A tabela `users_db` está sendo implementada com uma estrutura de **ID Duplo**:
-* **ID (Serial):** Chave primária para indexação eficiente e relacionamentos internos.
-* **UUID (v4):** Identificador aleatório exposto na API para garantir a segurança dos dados e evitar a enumeração de usuários por terceiros.
+* **ID (Serial):** Chave primária para indexação interna eficiente e performance em JOINS.
+* **UUID (v4):** Identificador público exposto na API, garantindo que usuários não consigam prever ou enumerar IDs de outros registros (Segurança por Design).
 
-## 📋 Como Configurar e Testar
+## 📂 Estrutura de Pastas
 
-1. **Clone o repositório:**
-   ```bash
-   git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
-   ```
+```text
+.
+├── cmd/server/main.go        # Ponto de entrada e configuração de rotas
+├── internal/                 # Código privado da aplicação (encapsulado)
+│   ├── database/             # Lógica de conexão e pool (pgxpool)
+│   ├── handlers/             # Camada HTTP (Handlers do Gin)
+│   ├── repository/           # Camada de Dados (Persistência com Squirrel)
+│   ├── models/               # Estruturas de dados (User struct)
+│   └── utils/                # Utilitários (Verificação de UUID)
+└── README.md
+```
 
-2. **Configure o arquivo `.env`:**
-   Na raiz do projeto, adicione suas credenciais do Supabase:
-   ```env
-   DB_HOST=seu-projeto.pooler.supabase.com
-   DB_PORT=6543
-   DB_USERNAME=postgres.seu-id
-   DB_PASSWORD=sua-senha
-   DB_NAME=postgres
-   DB_SSL_MODE=require
-   ```
+## 📋 Como Configurar
 
-3. **Inicie o servidor:**
-   ```bash
-   go run cmd/server/main.go
-   ```
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
+    ```
+2.  **Configure o arquivo `.env`:**
+    Crie um arquivo `.env` na raiz do projeto com sua string de conexão:
+    ```env
+    DB_URL=postgres://postgres:[SENHA]@db.[ID-PROJETO].supabase.co:5432/postgres
+    ```
+3.  **Inicie o servidor:**
+    ```bash
+    go run cmd/server/main.go
+    ```
 
 ## 📍 Roadmap de Desenvolvimento
 
-- [x] Configuração de conexão com Supabase via pgxpool.
-- [x] Implementação de Handler de Status da API.
-- [x] Criação de usuários com retorno de ID, UUID e Timestamps.
-- [x] Tratamento de erros de banco (Conflitos 409).
-- [ ] Implementação de busca de usuários por UUID.
-- [ ] Hash de senhas com Bcrypt.
-- [ ] Implementação de Soft Delete.
+- [x] Configuração de conexão resiliente com Supabase via `pgxpool`.
+- [x] Implementação do padrão `internal/` para segurança do código.
+- [x] **Operações CRUD Completas:**
+    - [x] **Create:** Registro de usuário com mapeamento de campos gerados.
+    - [x] **Read:** Listagem filtrada (non-deleted) e busca por UUID.
+    - [x] **Update:** Atualização dinâmica de campos via `map[string]any`.
+    - [x] **Delete:** Implementação de **Soft Delete** (coluna `deleted_at`).
+- [x] Utilitário centralizado de verificação de UUID.
+- [ ] Implementação de Hash de senhas com Bcrypt.
+- [ ] Autenticação JWT e Middlewares de proteção de rotas.
+- [ ] Testes de integração com `testify` e `httptest`.
 
 ## 🧠 Foco Atual
-No momento, o foco está na **otimização do parse de dados JSON** e na garantia de que a comunicação entre o **Gin** e o **pgx** ocorra sem vazamento de recursos ou ponteiros nulos.
 
+```
+No momento, o foco está na migração total dos comentários internos para **Inglês**, visando alinhar o projeto aos padrões globais de desenvolvimento e facilitar a colaboração em código aberto.
+```

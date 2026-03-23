@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"api_go/internal/models"
-	"api_go/repository"
+	"api_go/internal/repository"
 	"net/http"
 	"strings"
 
@@ -18,7 +18,7 @@ func CreateUserHandler(c *gin.Context) {
 		return
 	}
 
-	err := repository.CreateUser(user)
+	err := repository.CreateUser(c.Request.Context(), user)
 
 	if err != nil {
 
