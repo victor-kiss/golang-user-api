@@ -71,6 +71,5 @@ Optei por não utilizar um ORM (como GORM) para ter controle total sobre a perfo
 
 ## 🧠 Foco Atual
 
-```
-No momento, o foco está na migração total dos comentários internos para **Inglês**, visando alinhar o projeto aos padrões globais de desenvolvimento e facilitar a colaboração em código aberto.
-```
+
+*No momento, o foco está na migração total dos comentários internos para **Inglês**, visando alinhar o projeto aos padrões globais de desenvolvimento e facilitar a colaboração em código aberto.*
